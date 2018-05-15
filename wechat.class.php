@@ -239,6 +239,21 @@ class Wechat
 	public $errMsg = "no access";
 	public $logcallback;
 
+	private $expires_in = 3600;
+	
+	public function getAccessToken()
+	{
+	    return array(
+	        'access_token' => $this->access_token,
+	        'expires_in' => $this->expires_in
+	    );
+	}
+	
+	public function getAppid()
+	{
+	    return $this->appid;
+	}
+	
 	public function __construct($options)
 	{
 		$this->token = isset($options['token'])?$options['token']:'';
@@ -1235,6 +1250,7 @@ class Wechat
 			$this->access_token = $json['access_token'];
 			$expire = $json['expires_in'] ? intval($json['expires_in'])-100 : 3600;
 			$this->setCache($authname,$this->access_token,$expire);
+			$this->expires_in = $expire;
 			return $this->access_token;
 		}
 		return false;
@@ -2717,8 +2733,8 @@ class Wechat
 		if (!$this->access_token && !$this->checkAuth()) return false;
 		$result = $this->http_post(self::API_URL_PREFIX.self::TEMPLATE_SEND_URL.'access_token='.$this->access_token,self::json_encode($data));
 		if($result){
-			$json = json_decode($result,true);
-			if (!$json || !empty($json['errcode'])) {
+			$json = json_decode($result,true, 512, JSON_BIGINT_AS_STRING);
+			if (!$json || (isset($json['errcode']) && $json['errcode'] != 0)) {
 				$this->errCode = $json['errcode'];
 				$this->errMsg = $json['errmsg'];
 				return false;
